@@ -2,67 +2,68 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 DOCUMENTATION = r"""
-    name: ad
+    name: adgroup
     plugin_type: inventory
     author:
         - Matthew Howle <matthew@howle.org>
-    short_description: ActiveDirectory inventory source
+    short_description: Active Directory inventory source
     requirements:
         - python >= 2.7
         - ldap3
     optional:
         - gssapi
     description:
-        - Read inventory from Active Directory
+        - Read inventory from Active Directory group memberships.
         - Uses ad.(yml|yaml) YAML configuration file to configure the inventory plugin.
         - If no configuration value is assigned for the server or base, it will auto-detect.
         - If no username is defined, Kerberos + GSSAPI will be used to connect to the server.
     options:
         plugin:
-            description: Marks this as an instance of the 'ad' plugin.
+            description: Marks this as an instance of the 'adgroup' plugin.
             required: true
-            choices: ['ad']
+            choices: ['adgroup']
         server:
-            description: Active Directory server name.
+            description: The Active Directory server name.  If null, auto-detected by dnspython
             required: false
             type: str
             default: null
         port:
-            description: ActiveDirectory port. Using port 636 automatically enables SSL.
+            description: Active Directory port. Using port 636 automatically enables SSL.
             required: false
             type: int
             default: 389
         base:
-            description: Starting point for the search. if null, the default naming context will be used.
+            description: Starting point for the search. If null, the default naming context will be used.
             required: false
             type: str
             default: null
         scope:
-            description: Scope of the search.
+            description: Scope of the search
             required: false
             default: subtree
             choices: ['base', 'level', 'subtree']
         username:
-            description: Username to bind as. It can be the distinguishedname of the user, or "SHORTDOMAIN\user".  If null, the connection will use a simple bind. Otherwise, Kerberos+GSSAPI will be used.
+            description: Username to bind as. It can be the distinguishedname of the user, or "SHORTDOMAIN\user".  If defined, the connection will use a simple bind. Otherwise, Kerberos+GSSAPI will be used.
             required: false
             type: str
             default: null
         password:
-            description: Username's password. Must be defined if username is also defined.
+            description: Username's password. Must be defined if *username* is also defined.
             required: false
             type: str
             default: null
-        filter:
-            description: LDAP query filter. Note "objectClass=computer" is automatically appended.
+        root group:
+            description: Active Directory group that contains all other groups as members.  If not a distinguished name, it will be searched under *base* using *scope* as the search scope.
             required: false
             type: str
-            default: ''
-        ansible group:
-            description: Ansible group name to assign objects to
+            default: ansible-roles
+        group marker:
+            description: Marker that will be removed from group name (e.g. 'ansible-role-http' becomes 'http')
             required: false
             type: str
+            default: ansible-role-
         var attribute:
-            description: LDAP attribute to load as YAML for host-specific Ansible variables
+            description: LDAP attribute to load as YAML for group/host-specific variables.
             required: false
             type: str
             default: null
@@ -71,17 +72,18 @@ DOCUMENTATION = r"""
 EXAMPLES = r"""
 # Minimal example. 'server' and 'base' will be detected.
 # kerberos/gssapi will be used to connect.
-plugin: ad
+plugin: adgroup
 
 # Example with all values assigned
-plugin: ad
+plugin: adgroup
 server: dc.example.com
 port: 636
 base: OU=Groups,DC=example,DC=com
 username: EXAMPLE\ExampleUser  # or distinguishedname
 password: "SecurePassword"
-filter: "(operatingSystem='Debian GNU/Linux')"
-ansible group: Debian
+root group: ansible-roles
+group_marker: ansible-roles-
+import vars: yes
 var attribute: info
 """
 import socket
@@ -93,7 +95,7 @@ from ansible.plugins.inventory import BaseInventoryPlugin
 import yaml
 
 from ldap3 import BASE, Connection, DSA, LEVEL, SASL, Server, SUBTREE
-from ldap3.core.exceptions import LDAPSocketOpenError
+from ldap3.core.exceptions import LDAPSocketOpenError, LDAPAttributeError
 
 try:
     import dns.resolver as dns_resolver
@@ -106,9 +108,8 @@ SCOPES = {
     'subtree': SUBTREE
 }
 
-
 class InventoryModule(BaseInventoryPlugin):
-    NAME = 'ad'
+    NAME = 'adgroup'
 
     def __init__(self):
         super(InventoryModule, self).__init__()
@@ -116,8 +117,8 @@ class InventoryModule(BaseInventoryPlugin):
 
     def verify_file(self, path):
         if super(InventoryModule, self).verify_file(path):
-            filenames = ('ad.yaml', 'ad.yml')
-            return any((path.endswith(filename) for filename in filenames))
+            exts = ('.yaml', '.yml')
+            return any((path.endswith(ext) for ext in exts))
         return False
 
     def parse(self, inventory, loader, path, cache=True):
@@ -245,43 +246,103 @@ class InventoryModule(BaseInventoryPlugin):
             self._create_client()
 
         base = self._get_option("base")
-        user_filter = self._get_option("filter")
+        root_group_name = self._get_option("root group")
         scope = self._get_option("scope")
-        ansible_group = self._get_option("ansible group")
 
         var_attribute = self._get_option("var attribute")
         import_vars = var_attribute is not None
 
         xattrib = [var_attribute] if import_vars else []
 
-        qfilter = "(&(objectClass=computer)%s)" % user_filter
-
-        if ansible_group:
-            self.inventory.add_group(ansible_group)
-
-        results = self._connection.search(
+        if any([root_group_name.lower().startswith(v) for v in ("cn=", "ou=")]):
+            result = self._connection.search(
+                search_base=root_group_name,
+                search_filter="(objectClass=group)",
+                search_scope=BASE, attributes=["member"] + xattrib)
+        else:
+            result =  self._connection.search(
                 search_base=base,
-                search_filter=qfilter,
-                search_scope=scope,
-                attributes=["name"] + xattrib)
+                search_filter="(&(objectClass=group)(sAMAccountName=%s))" % root_group_name,
+                search_scope=scope, attributes=["member"] + xattrib)
 
-        if results:
-            for entry in self._connection.entries:
-                info = None
+        if not result:
+            return
+
+        root_group = self._connection.entries[0]
+
+        if "member" not in root_group:
+            return
+
+        if import_vars and var_attribute in root_group:
+            try:
+                raw_info = self._connection.entries[0].info.value
+                if raw_info:
+                    info = yaml.safe_load(raw_info)
+                    self._set_variables("all", info)
+            except yaml.scanner.ScannerError:
+                pass
+
+        members = root_group.member.values
+
+        for member in members:
+            result = self._connection.search(
+                    search_base=member,
+                    search_filter="(objectClass=*)",
+                    search_scope=BASE,
+                    attributes=["objectClass", "member", "name", "sAMAccountName"] + xattrib)
+
+            if result:
+                entry = self._connection.entries[0]
+
+                if "computer" in entry.objectClass:
+                    # Computer in root group; treat as "all"
+                    host_name = entry.sAMAccountName.value.lower()
+                    is_group = False
+                elif "member" not in self._connection.entries[0]:
+                    continue
+                else:
+                    is_group = True
+                    users = entry.member.values
+                    group_name = entry.sAMAccountName.value.lower()
+                    group_marker = self._get_option("group marker")
+
+                    if group_marker:
+                        group_name = group_name.replace(group_marker, "")
+
+                    self.inventory.add_group(group_name)
+
                 if import_vars and var_attribute in entry:
                     try:
                         raw_info = entry.info.value
                         if raw_info:
                             info = yaml.safe_load(raw_info)
-                    except yaml.scanner.ScannerError:
+                            if is_group:
+                                self._set_variables(group_name, info)
+                            else:
+                                self._set_variables(host_name, info)
+                    except (yaml.scanner.ScannerError, LDAPAttributeError):
                         pass
 
-                host_name = entry.name.value.lower()
+                if is_group:
+                    for user in users:
+                        result = self._connection.search(
+                                search_base=user,
+                                search_filter="(objectClass=computer)",
+                                search_scope=BASE,
+                                attributes=["info", "member", "name", "objectClass"] + xattrib)
 
-                if info:
-                    self._set_variables(host_name, info)
+                        if result:
+                            host_name = self._connection.entries[0].name.value.lower()
+                            try:
+                                raw_info = entry.info.value
+                                if raw_info:
+                                    info = yaml.safe_load(raw_info)
+                                    self._set_variables(host_name, info)
+                            except (yaml.scanner.ScannerError, LDAPAttributeError):
+                                pass
 
-                if ansible_group:
-                    self.inventory.add_host(host_name, group=ansible_group)
-
-                self.inventory.add_host(host_name, group="all")
+                            self.inventory.add_host(host_name, group=group_name)
+                            self.inventory.add_host(host_name, group="all")
+                else:
+                    host_name = entry.name.value
+                    self.inventory.add_host(host_name, group="all")
