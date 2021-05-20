@@ -46,6 +46,8 @@ Run `ansible-playbook -i ad.yml playbook.yml`
 | plugin | `str`| Yes | choices: `['ad']`; default: `ad` |  Marks this as an instance of the 'ad' plugin |
 | server | `str` | Yes, unless `dnspython` is installed. | `null` | Active Directory server name |
 | port | `int` | No | `389` | LDAP Server Port; using port 636 enables SSL |
+| ssl | `bool` | No | False | Connect to server with SSL |
+| starttls | `bool` | No | True | Connect to server with STARTTLS |
 | base | `str` | No | `null` | Starting port of the search. If `null`, the default naming context will be used. |
 | filter | `str` | No | `''` | LDAP query filter. `objectClass=computer` is automatically appended. | 
 | scope | `str` | No | choices: `['base', 'level', subtree']`; default: `subtree` | Scope of the search |

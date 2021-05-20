@@ -32,6 +32,16 @@ DOCUMENTATION = r"""
             required: false
             type: int
             default: 389
+        ssl:
+            description: Use SSL when connecting
+            required: false
+            type: bool
+            default: false
+        starttls:
+            description: Use STARTTLS when connecting
+            required: false
+            type: bool
+            default: true
         base:
             description: Starting point for the search. if null, the default naming context will be used.
             required: false
@@ -165,15 +175,18 @@ class InventoryModule(BaseInventoryPlugin):
         server = self._get_option("server")
         port = self._get_option("port")
         base = self._get_option("base")
+        use_starttls = self._get_option("starttls")
+        use_ssl = self._get_option("ssl")
 
         if server:
-            sargs = {"use_ssl": True} if port == 636 else {}
+            sargs = {"use_ssl": True} if port == 636 or use_ssl else {}
             ldap_server = Server(server, port=port, get_info=DSA, **sargs)
             cargs = self._get_connection_args()
 
             self._connection = Connection(ldap_server, **cargs)
             self._connection.open()
-            self._connection.start_tls()
+            if use_starttls:
+                self._connection.start_tls()
             self._connection.bind()
 
             if base is None:
