@@ -44,7 +44,7 @@ Run `ansible-playbook -i ad.yml playbook.yml`
 | Attribute | Type | Required | Choices/Default | Description |
 |--|--|--|--|--|
 | plugin | `str`| Yes | choices: `['ad']`; default: `ad` |  Marks this as an instance of the 'ad' plugin |
-| server | `str` | Yes, unless `dnspython` is installed. | `null` | Active Directory server name |
+| server | `str` | Yes, unless `dnspython` is installed. | `null` | Active Directory server name or list of server names |
 | port | `int` | No | `389` | LDAP Server Port; using port 636 enables SSL |
 | ssl | `bool` | No | False | Connect to server with SSL |
 | starttls | `bool` | No | True | Connect to server with STARTTLS |

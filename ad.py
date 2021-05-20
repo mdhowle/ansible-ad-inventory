@@ -23,9 +23,8 @@ DOCUMENTATION = r"""
             required: true
             choices: ['ad']
         server:
-            description: Active Directory server name.
+            description: Active Directory server name or list of server names.
             required: false
-            type: str
             default: null
         port:
             description: ActiveDirectory port. Using port 636 automatically enables SSL.
@@ -99,6 +98,7 @@ import struct
 
 from ansible.errors import AnsibleError
 from ansible.plugins.inventory import BaseInventoryPlugin
+from ansible.parsing.yaml.objects import AnsibleSequence
 
 import yaml
 
@@ -172,19 +172,30 @@ class InventoryModule(BaseInventoryPlugin):
         if self._connection:
             return self._connection
 
-        server = self._get_option("server")
+        servers = self._get_option("server")
+
+        if servers is None:
+            raise AnsibleError("Server name could not be determined")
+
+        if not isinstance(servers, AnsibleSequence):
+            servers = [servers]
+
         port = self._get_option("port")
         base = self._get_option("base")
         use_starttls = self._get_option("starttls")
         use_ssl = self._get_option("ssl")
 
-        if server:
+        for server in servers:
             sargs = {"use_ssl": True} if port == 636 or use_ssl else {}
             ldap_server = Server(server, port=port, get_info=DSA, **sargs)
             cargs = self._get_connection_args()
 
             self._connection = Connection(ldap_server, **cargs)
-            self._connection.open()
+            try:
+                self._connection.open()
+            except LDAPSocketOpenError:
+                continue
+
             if use_starttls:
                 self._connection.start_tls()
             self._connection.bind()
@@ -197,8 +208,7 @@ class InventoryModule(BaseInventoryPlugin):
                     base = (self._connection.server
                                .info.other["defaultNamingContext"][0])
                     self.set_option("base", base)
-        else:
-            raise AnsibleError("Server name could not be determined")
+            break
 
     def _get_domain(self):
         fqdn = socket.getfqnd()
