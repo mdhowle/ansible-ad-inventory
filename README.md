@@ -1,7 +1,7 @@
 
 # ansible-ad-inventory
 
-Active Directory dynamic inventory plugins for Ansible
+Active Directory dynamic inventory plugin for Ansible
 
 ## Installation
 
@@ -49,7 +49,7 @@ Run `ansible-playbook -i ad.yml playbook.yml`
 | ssl | `bool` | No | False | Connect to server with SSL |
 | starttls | `bool` | No | True | Connect to server with STARTTLS |
 | base | `str` | No | `null` | Starting port of the search. If `null`, the default naming context will be used. |
-| filter | `str` | No | `''` | LDAP query filter. `objectClass=computer` is automatically appended. | 
+| filter | `str` | No | `''` | LDAP query filter. `objectClass=computer` is automatically appended. |
 | scope | `str` | No | choices: `['base', 'level', subtree']`; default: `subtree` | Scope of the search |
 | username | `str` | No | `null` | Username to bind as. It can the distinguished name of the user, or "SHORTDOMAIN\user".  If `null`, Kerberos + GSSAPI authentication will be used.
 | password | `str` | No | `null` | Username's password. Must be defined if username is also defined. |
