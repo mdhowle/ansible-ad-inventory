@@ -8,6 +8,8 @@ Active Directory dynamic inventory plugin for Ansible
 To install locally,
 
 ```
+pip install ldap3
+
 mkdir -p ~/.ansible/plugins/inventory
 cd ~/.ansible/plugins/inventory
 git clone https://github.com/mdhowle/ansible-ad-inventory ad
