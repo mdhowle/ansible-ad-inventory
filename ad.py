@@ -61,6 +61,11 @@ DOCUMENTATION = r"""
             required: false
             type: str
             default: null
+        hostname var:
+            description: LDAP attribute to use as the inventory hostname
+            required: false
+            type: str
+            default: 'name'
         filter:
             description: LDAP query filter. Note "objectClass=computer" is automatically appended.
             required: false
@@ -270,6 +275,7 @@ class InventoryModule(BaseInventoryPlugin):
         base = self._get_option("base")
         user_filter = self._get_option("filter")
         scope = self._get_option("scope")
+        hostname_var = self._get_option("hostname var")
         ansible_group = self._get_option("ansible group")
 
         var_attribute = self._get_option("var attribute")
@@ -286,7 +292,7 @@ class InventoryModule(BaseInventoryPlugin):
                 search_base=base,
                 search_filter=qfilter,
                 search_scope=scope,
-                attributes=["name"] + xattrib)
+                attributes=[hostname_var] + xattrib)
 
         if results:
             for entry in self._connection.entries:
@@ -299,7 +305,7 @@ class InventoryModule(BaseInventoryPlugin):
                     except yaml.scanner.ScannerError:
                         pass
 
-                host_name = entry.name.value.lower()
+                host_name = getattr(entry, hostname_var).value.lower()
 
                 if info:
                     self._set_variables(host_name, info)

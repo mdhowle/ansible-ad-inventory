@@ -53,6 +53,7 @@ Run `ansible-playbook -i ad.yml playbook.yml`
 | base | `str` | No | `null` | Starting port of the search. If `null`, the default naming context will be used. |
 | filter | `str` | No | `''` | LDAP query filter. `objectClass=computer` is automatically appended. |
 | scope | `str` | No | choices: `['base', 'level', subtree']`; default: `subtree` | Scope of the search |
+| hostname var | `str` | No | `name` | LDAP attribute to use as the inventory hostname |
 | username | `str` | No | `null` | Username to bind as. It can the distinguished name of the user, or "SHORTDOMAIN\user".  If `null`, Kerberos + GSSAPI authentication will be used.
 | password | `str` | No | `null` | Username's password. Must be defined if username is also defined. |
 | ansible group | `str` | No | N/A | Ansible group name to assign hosts to |
