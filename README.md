@@ -42,6 +42,10 @@ ansible group: Debian
 Run `ansible-playbook -i ad.yml playbook.yml`
 
 
+**NOTE**: Quotations are not required for the values. If you do quote the values, you will need to escape backslashes (e.g. `username: "EXAMPLE\\ExampleUser"`).
+
+Regardless of quoting, you do *not* need to quote or escape spaces within LDAP filters.
+
 ## Configuration
 | Attribute | Type | Required | Choices/Default | Description |
 |--|--|--|--|--|

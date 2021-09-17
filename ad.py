@@ -94,7 +94,7 @@ port: 636
 base: OU=Groups,DC=example,DC=com
 username: EXAMPLE\ExampleUser  # or distinguishedname
 password: "SecurePassword"
-filter: "(operatingSystem='Debian GNU/Linux')"
+filter: "(operatingSystem=Debian GNU/Linux)"
 ansible group: Debian
 var attribute: info
 """
