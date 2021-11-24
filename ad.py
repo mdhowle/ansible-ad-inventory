@@ -141,8 +141,8 @@ class InventoryModule(BaseInventoryPlugin):
         self._create_client()
         self._build_inventory()
 
-    def _get_option(self, option):
-        value = self.get_option(option)
+    def get_option(self, option):
+        value = super(InventoryModule, self).get_option(option)
 
         if value:
             if option == "scope":
@@ -163,8 +163,8 @@ class InventoryModule(BaseInventoryPlugin):
         return value
 
     def _get_connection_args(self):
-        username = self._get_option("username")
-        password = self._get_option("password")
+        username = self.get_option("username")
+        password = self.get_option("password")
 
         if username:
             if password:
@@ -177,7 +177,7 @@ class InventoryModule(BaseInventoryPlugin):
         if self._connection:
             return self._connection
 
-        servers = self._get_option("server")
+        servers = self.get_option("server")
 
         if servers is None:
             raise AnsibleError("Server name could not be determined")
@@ -185,10 +185,10 @@ class InventoryModule(BaseInventoryPlugin):
         if not isinstance(servers, AnsibleSequence):
             servers = [servers]
 
-        port = self._get_option("port")
-        base = self._get_option("base")
-        use_starttls = self._get_option("starttls")
-        use_ssl = self._get_option("ssl")
+        port = self.get_option("port")
+        base = self.get_option("base")
+        use_starttls = self.get_option("starttls")
+        use_ssl = self.get_option("ssl")
 
         for server in servers:
             sargs = {"use_ssl": True} if port == 636 or use_ssl else {}
@@ -272,13 +272,13 @@ class InventoryModule(BaseInventoryPlugin):
         if self._connection is None:
             self._create_client()
 
-        base = self._get_option("base")
-        user_filter = self._get_option("filter")
-        scope = self._get_option("scope")
-        hostname_var = self._get_option("hostname var")
-        ansible_group = self._get_option("ansible group")
+        base = self.get_option("base")
+        user_filter = self.get_option("filter")
+        scope = self.get_option("scope")
+        hostname_var = self.get_option("hostname var")
+        ansible_group = self.get_option("ansible group")
 
-        var_attribute = self._get_option("var attribute")
+        var_attribute = self.get_option("var attribute")
         import_vars = var_attribute is not None
 
         xattrib = [var_attribute] if import_vars else []
