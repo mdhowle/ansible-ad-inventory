@@ -62,3 +62,4 @@ Regardless of quoting, you do *not* need to quote or escape spaces within LDAP f
 | password | `str` | No | `null` | Username's password. Must be defined if username is also defined. |
 | ansible group | `str` | No | N/A | Ansible group name to assign hosts to |
 | var attribute | `str` | No | `null` | LDAP attribute to load as YAML for host-specific Ansible variables. |
+| use ad groups | `bool` | No | `True` | Add AD group memberships as Ansible host groups. |

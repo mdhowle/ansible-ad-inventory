@@ -80,6 +80,11 @@ DOCUMENTATION = r"""
             required: false
             type: str
             default: null
+        use ad groups:
+            description: Add AD group memberships as Ansible host groups.
+            required: false
+            type: bool
+            default: true
 """
 
 EXAMPLES = r"""
@@ -109,6 +114,7 @@ import yaml
 
 from ldap3 import BASE, Connection, DSA, LEVEL, SASL, Server, SUBTREE
 from ldap3.core.exceptions import LDAPSocketOpenError
+from ldap3.utils.dn import parse_dn
 
 try:
     import dns.resolver as dns_resolver
@@ -277,11 +283,15 @@ class InventoryModule(BaseInventoryPlugin):
         scope = self.get_option("scope")
         hostname_var = self.get_option("hostname var")
         ansible_group = self.get_option("ansible group")
+        use_ad_groups = self.get_option("use ad groups")
 
         var_attribute = self.get_option("var attribute")
         import_vars = var_attribute is not None
 
         xattrib = [var_attribute] if import_vars else []
+
+        if use_ad_groups:
+            xattrib.append("memberOf")
 
         qfilter = "(&(objectClass=computer)%s)" % user_filter
 
@@ -312,5 +322,12 @@ class InventoryModule(BaseInventoryPlugin):
 
                 if ansible_group:
                     self.inventory.add_host(host_name, group=ansible_group)
+
+                if use_ad_groups:
+                    for group_dn in entry.memberOf.values:
+                        group_dn_parts = parse_dn(group_dn)
+                        group_cn = group_dn_parts[0][1]
+                        group = self.inventory.add_group(group_cn)
+                        self.inventory.add_host(host_name, group=group)
 
                 self.inventory.add_host(host_name, group="all")
