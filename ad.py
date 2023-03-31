@@ -222,7 +222,7 @@ class InventoryModule(BaseInventoryPlugin):
             break
 
     def _get_domain(self):
-        fqdn = socket.getfqnd()
+        fqdn = socket.getfqdn()
         return fqdn[fqdn.find(".")+1:] if "." in fqdn else None
 
 
