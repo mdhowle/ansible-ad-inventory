@@ -103,6 +103,7 @@ filter: "(operatingSystem=Debian GNU/Linux)"
 ansible group: Debian
 var attribute: info
 """
+import os
 import socket
 import struct
 
@@ -127,6 +128,11 @@ SCOPES = {
     'subtree': SUBTREE
 }
 
+ENVIRONMENT_VAR_MAP = {
+    'username': 'ANSIBLE_AD_INVENTORY_USERNAME',
+    'password': 'ANSIBLE_AD_INVENTORY_PASSWORD',
+}
+
 
 class InventoryModule(BaseInventoryPlugin):
     NAME = 'ad'
@@ -148,6 +154,12 @@ class InventoryModule(BaseInventoryPlugin):
         self._build_inventory()
 
     def get_option(self, option):
+        if option in ENVIRONMENT_VAR_MAP:
+            env_var = ENVIRONMENT_VAR_MAP[option]
+            value = os.environ.get(env_var)
+            if value:
+                return value
+
         value = super(InventoryModule, self).get_option(option)
 
         if value:

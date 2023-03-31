@@ -47,19 +47,19 @@ Run `ansible-playbook -i ad.yml playbook.yml`
 Regardless of quoting, you do *not* need to quote or escape spaces within LDAP filters.
 
 ## Configuration
-| Attribute | Type | Required | Choices/Default | Description |
-|--|--|--|--|--|
-| plugin | `str`| Yes | choices: `['ad']`; default: `ad` |  Marks this as an instance of the 'ad' plugin |
-| server | `str` | Yes, unless `dnspython` is installed. | `null` | Active Directory server name or list of server names |
-| port | `int` | No | `389` | LDAP Server Port; using port 636 enables SSL |
-| ssl | `bool` | No | False | Connect to server with SSL |
-| starttls | `bool` | No | True | Connect to server with STARTTLS |
-| base | `str` | No | `null` | Starting port of the search. If `null`, the default naming context will be used. |
-| filter | `str` | No | `''` | LDAP query filter. `objectClass=computer` is automatically appended. |
-| scope | `str` | No | choices: `['base', 'level', subtree']`; default: `subtree` | Scope of the search |
-| hostname var | `str` | No | `name` | LDAP attribute to use as the inventory hostname |
-| username | `str` | No | `null` | Username to bind as. It can the distinguished name of the user, or "SHORTDOMAIN\user".  If `null`, Kerberos + GSSAPI authentication will be used.
-| password | `str` | No | `null` | Username's password. Must be defined if username is also defined. |
-| ansible group | `str` | No | N/A | Ansible group name to assign hosts to |
-| var attribute | `str` | No | `null` | LDAP attribute to load as YAML for host-specific Ansible variables. |
-| use ad groups | `bool` | No | `True` | Add AD group memberships as Ansible host groups. |
+| Attribute | Type | Required | Choices/Default | Description                                                                                                                                                                                                           |
+|--|--|--|--|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| plugin | `str`| Yes | choices: `['ad']`; default: `ad` | Marks this as an instance of the 'ad' plugin                                                                                                                                                                          |
+| server | `str` | Yes, unless `dnspython` is installed. | `null` | Active Directory server name or list of server names                                                                                                                                                                  |
+| port | `int` | No | `389` | LDAP Server Port; using port 636 enables SSL                                                                                                                                                                          |
+| ssl | `bool` | No | False | Connect to server with SSL                                                                                                                                                                                            |
+| starttls | `bool` | No | True | Connect to server with STARTTLS                                                                                                                                                                                       |
+| base | `str` | No | `null` | Starting port of the search. If `null`, the default naming context will be used.                                                                                                                                      |
+| filter | `str` | No | `''` | LDAP query filter. `objectClass=computer` is automatically appended.                                                                                                                                                  |
+| scope | `str` | No | choices: `['base', 'level', subtree']`; default: `subtree` | Scope of the search                                                                                                                                                                                                   |
+| hostname var | `str` | No | `name` | LDAP attribute to use as the inventory hostname                                                                                                                                                                       |
+| username | `str` | No | `null` | Username to bind as. It can the distinguished name of the user, or "SHORTDOMAIN\user".  If `null`, Kerberos + GSSAPI authentication will be used. Can be set by `ANSIBLE_AD_INVENTORY_USERNAME` environment variable. |
+| password | `str` | No | `null` | Username's password. Must be defined if username is also defined. Can be set by `ANSIBLE_AD_INVENTORY_PASSWORD` environment variable.                                                                                 |
+| ansible group | `str` | No | N/A | Ansible group name to assign hosts to                                                                                                                                                                                 |
+| var attribute | `str` | No | `null` | LDAP attribute to load as YAML for host-specific Ansible variables.                                                                                                                                                   |
+| use ad groups | `bool` | No | `True` | Add AD group memberships as Ansible host groups.                                                                                                                                                                      |
