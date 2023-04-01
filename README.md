@@ -59,7 +59,7 @@ Regardless of quoting, you do *not* need to quote or escape spaces within LDAP f
 | scope | `str` | No | choices: `['base', 'level', subtree']`; default: `subtree` | Scope of the search |
 | hostname var | `str` | No | `name` | LDAP attribute to use as the inventory hostname |
 | username | `str` | No | `null` | Username to bind as. It can the distinguished name of the user, or "SHORTDOMAIN\user".  If `null`, Kerberos + GSSAPI authentication will be used.
-| password | `str` | No | `null` | Username's password. Must be defined if username is also defined. |
+| password | `str` | No | `null` | Username's password. Must be defined if username is also defined. Environment variable `ANSIBLE_AD_PLUGIN_PASSWORD`. |
 | ansible group | `str` | No | N/A | Ansible group name to assign hosts to |
 | var attribute | `str` | No | `null` | LDAP attribute to load as YAML for host-specific Ansible variables. |
 | use ad groups | `bool` | No | `True` | Add AD group memberships as Ansible host groups. |

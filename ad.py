@@ -1,4 +1,6 @@
 from __future__ import (absolute_import, division, print_function)
+import os
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -170,7 +172,7 @@ class InventoryModule(BaseInventoryPlugin):
 
     def _get_connection_args(self):
         username = self.get_option("username")
-        password = self.get_option("password")
+        password = self.get_option("password") or os.environ.get("ANSIBLE_AD_PLUGIN_PASSWORD")
 
         if username:
             if password:
