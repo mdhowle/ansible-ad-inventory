@@ -56,11 +56,15 @@ DOCUMENTATION = r"""
             required: false
             type: str
             default: null
+            env:
+                - name: ANSIBLE_AD_INVENTORY_USERNAME
         password:
             description: Username's password. Must be defined if username is also defined.
             required: false
             type: str
             default: null
+            env:
+                - name: ANSIBLE_AD_INVENTORY_PASSWORD
         hostname var:
             description: LDAP attribute to use as the inventory hostname
             required: false
@@ -103,6 +107,7 @@ filter: "(operatingSystem=Debian GNU/Linux)"
 ansible group: Debian
 var attribute: info
 """
+import os
 import socket
 import struct
 
@@ -127,6 +132,11 @@ SCOPES = {
     'subtree': SUBTREE
 }
 
+ENVIRONMENT_VAR_MAP = {
+    'username': 'ANSIBLE_AD_INVENTORY_USERNAME',
+    'password': 'ANSIBLE_AD_INVENTORY_PASSWORD',
+}
+
 
 class InventoryModule(BaseInventoryPlugin):
     NAME = 'ad'
@@ -148,6 +158,12 @@ class InventoryModule(BaseInventoryPlugin):
         self._build_inventory()
 
     def get_option(self, option):
+        if option in ENVIRONMENT_VAR_MAP:
+            env_var = ENVIRONMENT_VAR_MAP[option]
+            value = os.environ.get(env_var)
+            if value:
+                return value
+
         value = super(InventoryModule, self).get_option(option)
 
         if value:
@@ -222,7 +238,7 @@ class InventoryModule(BaseInventoryPlugin):
             break
 
     def _get_domain(self):
-        fqdn = socket.getfqnd()
+        fqdn = socket.getfqdn()
         return fqdn[fqdn.find(".")+1:] if "." in fqdn else None
 
 
